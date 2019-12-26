@@ -60,6 +60,15 @@ func (m *Matrix) AddVectorOnCol(vec Vector, col int) error {
 		return fmt.Errorf("Matrix: Vector's width is out of range")
 	}
 
+	m.mat[col] = vec
+	return nil
+}
+
+func (m *Matrix) AppendNewVec(vec Vector) error {
+	if vec.Len() != m.width {
+		return fmt.Errorf("Matrix: Vector's width is out of range")
+	}
+
 	m.mat = append(m.mat, vec)
 	m.length++
 	return nil

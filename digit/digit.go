@@ -1,12 +1,12 @@
 package digit
 
 import (
-	"fmt"
 	"image"
 	"image/png"
 	"os"
 
 	"github.com/alidadar7676/digits-classification/matrix"
+	"github.com/nfnt/resize"
 )
 
 type Digit struct {
@@ -20,7 +20,6 @@ func (d *Digit) Vector() (matrix.Vector, error) {
 	}
 
 	dims := d.img.Bounds().Size()
-
 	vec, err := matrix.NewVector(dims.X * dims.Y)
 	if err != nil {
 		return nil, err
@@ -29,7 +28,6 @@ func (d *Digit) Vector() (matrix.Vector, error) {
 	for col := 0; col < dims.X; col++ {
 		for row := 0; row < dims.Y; row++ {
 			vec = append(vec, float64(d.img.GrayAt(row, col).Y))
-			fmt.Println(float64(d.img.GrayAt(row, col).Y))
 		}
 	}
 	d.vec = vec
@@ -50,7 +48,10 @@ func NewDigit(path string) (Digit, error) {
 	if err != nil {
 		return Digit{}, err
 	}
-	grayImg := grayScale(img)
+	img16x16 := resize.Resize(16, 16, img, resize.NearestNeighbor)
+
+	grayImg := grayScale(img16x16)
+	
 
 	return Digit{
 		img: grayImg,

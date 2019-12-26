@@ -64,8 +64,5 @@ func NewClass(dir string) (Class, error) {
 		}
 	}
 
-	fmt.Println(class.space.Dims())
-	fmt.Println(len(files))
-
 	return class, nil
 }
