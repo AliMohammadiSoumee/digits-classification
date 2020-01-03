@@ -7,11 +7,12 @@ import (
 	"strconv"
 
 	"github.com/alidadar7676/digits-classification/matrix"
+	"github.com/nfnt/resize"
 	"github.com/sirupsen/logrus"
 )
 
-const ImageWidth = 28
-const ImageHeigth = 28
+const ImageWidth = 40
+const ImageHeigth = 40
 
 var maxW = 0
 var maxH = 0
@@ -56,10 +57,10 @@ func NewDigit(path string) (Digit, error) {
 		return Digit{}, err
 	}
 
-	//resizedImg := resize.Resize(ImageWidth, ImageHeigth, img, resize.Bicubic)
+	resizedImg := resize.Resize(ImageWidth, ImageHeigth, img, resize.NearestNeighbor)
 	//encode(resizedImg)
-	
-	grayImg := grayScale(img)
+
+	grayImg := grayScale(resizedImg)
 
 	//	if img.Bounds().Size().X > maxW {
 	//		maxW = img.Bounds().Size().X

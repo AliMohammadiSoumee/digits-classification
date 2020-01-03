@@ -103,7 +103,7 @@ func (c *Class) makeIdentifier() error {
 		return err
 	}
 
-	uMat, err = uMat.SplitCol(22)
+	uMat, err = uMat.SplitCol(2)
 	if err != nil {
 		return err
 	}

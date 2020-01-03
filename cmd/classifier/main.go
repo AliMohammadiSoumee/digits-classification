@@ -37,7 +37,12 @@ func main() {
 //	temp["num9"] = make(map[string]int)
 //
 	cnt := 0
+	n := 0
 	for _, file := range files {
+		n++
+		if n > 100 {
+			break
+		}
 		name := file.Name()[7:11]
 		filePath := filepath.Join(dir, file.Name())
 		digit, err := digit.NewDigit(filePath)
@@ -55,7 +60,7 @@ func main() {
 		if ans == name {
 			cnt++
 		}
-		fmt.Println(name, ans)
+		fmt.Println(file.Name(), ans)
 		fmt.Println("count =", cnt)
 	}
 
