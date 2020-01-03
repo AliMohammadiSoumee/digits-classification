@@ -4,10 +4,17 @@ import (
 	"image"
 	"image/png"
 	"os"
+	"strconv"
 
 	"github.com/alidadar7676/digits-classification/matrix"
-	"github.com/nfnt/resize"
+	"github.com/sirupsen/logrus"
 )
+
+const ImageWidth = 28
+const ImageHeigth = 28
+
+var maxW = 0
+var maxH = 0
 
 type Digit struct {
 	img *image.Gray
@@ -27,7 +34,7 @@ func (d *Digit) Vector() (matrix.Vector, error) {
 
 	for col := 0; col < dims.X; col++ {
 		for row := 0; row < dims.Y; row++ {
-			vec = append(vec, float64(d.img.GrayAt(row, col).Y))
+			vec[dims.Y*col+row] = float64(d.img.GrayAt(row, col).Y)
 		}
 	}
 	d.vec = vec
@@ -48,12 +55,39 @@ func NewDigit(path string) (Digit, error) {
 	if err != nil {
 		return Digit{}, err
 	}
-	img16x16 := resize.Resize(16, 16, img, resize.NearestNeighbor)
 
-	grayImg := grayScale(img16x16)
+	//resizedImg := resize.Resize(ImageWidth, ImageHeigth, img, resize.Bicubic)
+	//encode(resizedImg)
 	
+	grayImg := grayScale(img)
+
+	//	if img.Bounds().Size().X > maxW {
+	//		maxW = img.Bounds().Size().X
+	//	}
+	//	if img.Bounds().Size().Y > maxH {
+	//		maxH = img.Bounds().Size().Y
+	//	}
+	//	fmt.Println(maxW, maxH)
 
 	return Digit{
 		img: grayImg,
 	}, nil
+}
+
+var n int
+
+func encode(img image.Image) {
+	n++
+	outputFile, err := os.Create("/home/ali/Developer/Go/src/github.com/alidadar7676/digits-classification/USPSdata/Test1/" + strconv.Itoa(n))
+	if err != nil {
+		logrus.Error(err)
+		// Handle error
+	}
+
+	// Encode takes a writer interface and an image interface
+	// We pass it the File and the RGBA
+	png.Encode(outputFile, img)
+
+	// Don't forget to close files
+	outputFile.Close()
 }

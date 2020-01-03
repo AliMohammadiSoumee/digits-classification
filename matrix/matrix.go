@@ -13,9 +13,25 @@ type Matrix struct {
 	length, width int
 }
 
+func (m Matrix) VectorAtIndex(ind int) Vector {
+	return m.mat[ind]
+}
+
+func (m Matrix) String() string {
+	str := ""
+	str += fmt.Sprintf("%d ---- %d\n", m.width, m.length)
+	for i := 0; i < m.width; i++ {
+		for j := 0; j < m.length; j++ {
+			str += fmt.Sprintf("%f ", m.At(i, j))
+		}
+		str += fmt.Sprintf("\n")
+	}
+	return str
+}
+
 // Dims returns dimension(size) of the matrix
 func (m Matrix) Dims() (r, c int) {
-	return m.length, m.width
+	return m.width, m.length
 }
 
 // At return stored value in position (row, col) of the matrix
@@ -27,7 +43,7 @@ func (m Matrix) At(row, col int) float64 {
 func (m Matrix) T() mat.Matrix {
 	mtrx, err := NewEmptyMatrix(m.length)
 	if err != nil {
-		logrus.Error("matrix: Cannot create matrix transpose")
+		logrus.Error(err)
 		return Matrix{}
 	}
 
@@ -40,7 +56,11 @@ func (m Matrix) T() mat.Matrix {
 			vec[c] = m.At(r, c)
 		}
 
-		mtrx.AddVectorOnCol(vec, r)
+		err = mtrx.AppendNewVec(vec)
+		if err != nil {
+			logrus.Error(err)
+			return Matrix{}
+		}
 	}
 
 	return mtrx
@@ -49,15 +69,46 @@ func (m Matrix) T() mat.Matrix {
 // Factorize returns the singular value decomposition of the matrix
 func (m Matrix) Factorize() *mat.SVD {
 	svd := mat.SVD{}
-	svd.Factorize(m, mat.SVDFull)
+	svd.Factorize(m, mat.SVDThin)
 
 	return &svd
 }
 
+func (m Matrix) MultiplyVector(vec Vector) (Vector, error) {
+	if m.length != vec.Len() {
+		return Vector{}, fmt.Errorf("matrix: matrix and vector don't have a same dimensions")
+	}
+
+	mulVec, err := NewVector(vec.Len())
+	if err != nil {
+		return Vector{}, err
+	}
+
+	for r := 0; r < m.width; r++ {
+		val := 0.0
+		for c := 0; c < m.length; c++ {
+			val += m.At(r, c) * vec.At(r)
+		}
+		mulVec[r] = val
+	}
+
+	return mulVec, nil
+}
+
+func (m Matrix) MultiplyMatrix(n Matrix) (Matrix, error) {
+	c := &mat.Dense{}
+	c.Mul(m, n)
+	res, err := DenseToMatrix(c)
+	if err != nil {
+		return Matrix{}, err
+	}
+	return res, nil
+}
+
 // AddVectorOnCol puts a vector on the column col of the matrix
 func (m *Matrix) AddVectorOnCol(vec Vector, col int) error {
-	if vec.Len() != m.width {
-		return fmt.Errorf("Matrix: Vector's width is out of range")
+	if vec.Len() != m.width || col >= m.length {
+		return fmt.Errorf("Matrix: Index out of range")
 	}
 
 	m.mat[col] = vec
@@ -72,6 +123,34 @@ func (m *Matrix) AppendNewVec(vec Vector) error {
 	m.mat = append(m.mat, vec)
 	m.length++
 	return nil
+}
+
+func (m *Matrix) SplitCol(num int) (Matrix, error) {
+	if m.length <= num {
+		return Matrix{}, fmt.Errorf("Matrix: num for split is greater than the length of matrix")
+	}
+
+	mat, err := NewEmptyMatrix(m.width)
+	if err != nil {
+		return Matrix{}, err
+	}
+
+	for j := 0; j < num; j++ {
+		vec, err := NewVector(m.width)
+		if err != nil {
+			return Matrix{}, err
+		}
+
+		for i := 0; i < m.width; i++ {
+			vec[i] = m.At(i, j)
+		}
+		err = mat.AppendNewVec(vec)
+		if err != nil {
+			return Matrix{}, err
+		}
+	}
+
+	return mat, nil
 }
 
 // NewEmptyMatrix returns EmptyMatrix
@@ -96,26 +175,24 @@ func NewMatrixFromVectors(vecs []Vector) (Matrix, error) {
 	}
 
 	for _, vec := range vecs {
-		mtrx.AddVectorOnCol(vec, mtrx.length)
+		err := mtrx.AppendNewVec(vec)
+		if err != nil {
+			return Matrix{}, err
+		}
 	}
 
 	return mtrx, nil
 }
 
 // NewMatrix creates a new matrix with a specific dimension
-func NewMatrix(length, width int) (Matrix, error) {
+func NewMatrix(width, length int) (Matrix, error) {
 	if length < 0 {
 		return Matrix{}, fmt.Errorf("Matrix: Length of matrix must be greater than zero")
 	}
 
-	if width < 0 {
-		return Matrix{}, fmt.Errorf("Matrix: Length of matrix must be greater than zero")
-	}
-
-	mtrx := Matrix{
-		mat: make([]Vector, 0),
-		length: 0,
-		width: width,
+	mtrx, err := NewEmptyMatrix(width)
+	if err != nil {
+		return Matrix{}, nil
 	}
 
 	for i := 0; i < length; i++ {
@@ -123,11 +200,10 @@ func NewMatrix(length, width int) (Matrix, error) {
 		if err != nil {
 			return Matrix{},err
 		}
-		err = mtrx.AddVectorOnCol(vec, mtrx.length)
+		err = mtrx.AppendNewVec(vec)
 		if err != nil {
 			return Matrix{}, err
 		}
-		mtrx.length++
 	}
 
 	return mtrx , nil

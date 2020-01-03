@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"os"
+
+	"github.com/alidadar7676/digits-classification/digit"
 )
 
 func isPng(path string) bool {
@@ -11,6 +13,7 @@ func isPng(path string) bool {
 	if err != nil {
 		return false
 	}
+	defer file.Close()
 
 	typ, err := getFileContentType(file)
 	if err != nil {
@@ -25,7 +28,7 @@ func isPng(path string) bool {
 }
 
 func getFileContentType(out *os.File) (string, error) {
-	buffer := make([]byte, 512)
+	buffer := make([]byte, digit.ImageWidth * digit.ImageHeigth)
 
 	_, err := out.Read(buffer)
 	if err != nil {
